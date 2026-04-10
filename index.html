@@ -3,334 +3,197 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HospedaFacil - Sistema de Gestão</title>
+    <title>HospedaFacil Cloud</title>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    
     <style>
-        :root {
-            --sidebar-width: 240px;
-            --bg-body: #f4f7f9;
-            --bg-card: #ffffff;
-            --primary: #3498db;
-            --text-main: #2c3e50;
-            --text-sub: #7f8c8d;
-            --success: #2ecc71;
-            --danger: #e74c3c;
-            --border: #e1e8ed;
-        }
-
-        body { 
-            font-family: 'Segoe UI', system-ui, sans-serif; 
-            background-color: var(--bg-body); 
-            margin: 0; display: flex; height: 100vh; color: var(--text-main);
-            transition: all 0.3s ease;
-        }
-
-        /* --- MENU LATERAL (PADRÃO COMPUTADOR) --- */
-        .sidebar { 
-            width: var(--sidebar-width); 
-            background: #1a252f; 
-            color: white; 
-            display: flex; 
-            flex-direction: column;
-            flex-shrink: 0;
-            z-index: 100;
-            transition: all 0.3s ease;
-        }
-        .sidebar-header { padding: 30px 20px; font-weight: 800; font-size: 1.2rem; border-bottom: 1px solid #2c3e50; letter-spacing: 1px; }
+        :root { --sidebar-width: 240px; --bg-body: #f4f7f9; --bg-card: #ffffff; --primary: #3498db; --text-main: #2c3e50; --text-sub: #7f8c8d; --success: #2ecc71; --danger: #e74c3c; --border: #e1e8ed; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg-body); margin: 0; display: flex; height: 100vh; color: var(--text-main); transition: all 0.3s ease; }
         
-        .sidebar-nav { flex: 1; padding: 20px 0; }
-        .nav-btn { 
-            width: 100%; border: none; background: none; color: #bdc3c7; 
-            padding: 15px 25px; text-align: left; cursor: pointer; 
-            font-size: 14px; font-weight: 600; transition: 0.2s;
-            display: flex; align-items: center; gap: 12px;
-        }
-        .nav-btn:hover { background: #2c3e50; color: white; }
+        .sidebar { width: var(--sidebar-width); background: #1a252f; color: white; display: flex; flex-direction: column; flex-shrink: 0; z-index: 100; transition: 0.3s; }
+        .sidebar-header { padding: 30px 20px; font-weight: 800; font-size: 1.1rem; border-bottom: 1px solid #2c3e50; }
+        .sidebar-nav { flex: 1; padding: 10px 0; }
+        .nav-btn { width: 100%; border: none; background: none; color: #bdc3c7; padding: 15px 25px; text-align: left; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 10px; }
         .nav-btn.active { background: var(--primary); color: white; }
 
-        /* --- MODO CELULAR (CSS SOBREPOSTO) --- */
-        body.mobile-mode { flex-direction: column; }
-        body.mobile-mode .sidebar {
-            width: 100%;
-            height: 70px;
-            flex-direction: row;
-            position: fixed;
-            bottom: 0;
-            top: auto;
-            border-top: 1px solid #2c3e50;
-        }
-        body.mobile-mode .sidebar-header { display: none; }
-        body.mobile-mode .sidebar-nav { display: flex; padding: 0; width: 100%; justify-content: space-around; }
-        body.mobile-mode .nav-btn {
-            flex-direction: column;
-            padding: 10px;
-            text-align: center;
-            justify-content: center;
-            font-size: 10px;
-            gap: 4px;
-        }
-        body.mobile-mode .main-content { padding: 15px; padding-bottom: 90px; }
-        body.mobile-mode .painel-grid { grid-template-columns: 1fr; }
-        body.mobile-mode .footer-sidebar { display: none; }
-
-        /* --- ÁREA DE CONTEÚDO --- */
-        .main-content { flex: 1; overflow-y: auto; padding: 40px; transition: 0.3s; }
-        .content-section { display: none; max-width: 1000px; margin: auto; animation: fadeIn 0.3s ease; }
+        .main-content { flex: 1; overflow-y: auto; padding: 30px; }
+        .content-section { display: none; max-width: 900px; margin: auto; animation: fadeIn 0.3s; }
         .content-section.active { display: block; }
-
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* --- CARDS E COMPONENTES --- */
-        .card-box { background: white; padding: 20px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 25px; }
+        .card-box { background: white; padding: 20px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
         .painel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .col-header { padding: 12px; border-radius: 8px; text-align: center; font-weight: bold; margin-bottom: 15px; font-size: 13px; }
+        .col-header { padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; margin-bottom: 15px; font-size: 12px; }
         .bg-ent { background: rgba(46, 204, 113, 0.1); color: var(--success); }
         .bg-sai { background: rgba(231, 76, 60, 0.1); color: var(--danger); }
 
-        .apto-card { border: 1px solid var(--border); border-radius: 12px; margin-bottom: 12px; background: white; }
-        .apto-card-head { padding: 12px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 14px; }
-        
-        .badge { padding: 3px 8px; border-radius: 20px; font-size: 9px; color: white; font-weight: bold; }
+        .apto-card { border: 1px solid var(--border); border-radius: 10px; margin-bottom: 10px; background: white; padding: 12px; }
+        .badge { padding: 3px 8px; border-radius: 20px; font-size: 10px; color: white; float: right; }
         .badge-limpo { background: var(--success); }
         .badge-sujo { background: var(--danger); }
         
-        .pill { background: #fef9c3; padding: 6px; border-radius: 6px; font-size: 11px; display: block; margin-bottom: 10px; border-left: 4px solid #f1c40f; }
-        .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
-        
+        input, select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 10px; box-sizing: border-box; }
         .btn-primary { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; }
-        
-        /* Botão de Alternar Modo */
-        .btn-toggle-view {
-            background: #2c3e50;
-            color: #fff;
-            border: 1px solid #455a64;
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 11px;
-            cursor: pointer;
-            margin: 10px 20px;
-            font-weight: bold;
-            transition: 0.3s;
-        }
-        .btn-toggle-view:hover { background: var(--primary); }
+
+        /* MODO CELULAR */
+        body.mobile-mode { flex-direction: column; }
+        body.mobile-mode .sidebar { width: 100%; height: 65px; flex-direction: row; position: fixed; bottom: 0; }
+        body.mobile-mode .sidebar-header { display: none; }
+        body.mobile-mode .sidebar-nav { display: flex; width: 100%; justify-content: space-around; padding: 0; }
+        body.mobile-mode .nav-btn { flex-direction: column; font-size: 9px; padding: 8px; text-align: center; justify-content: center; }
+        body.mobile-mode .main-content { padding: 15px; padding-bottom: 80px; }
+        body.mobile-mode .painel-grid { grid-template-columns: 1fr; }
+        body.mobile-mode .footer-sidebar { display: none; }
     </style>
 </head>
 <body id="mainBody">
 
 <aside class="sidebar">
-    <div class="sidebar-header">🏢 HOSPEDA+</div>
+    <div class="sidebar-header">🏢 HOSPEDA+ CLOUD</div>
     <nav class="sidebar-nav">
-        <button class="nav-btn active" onclick="trocarAba(event, 'aba-painel')"><span>📅</span> Painel</button>
-        <button class="nav-btn" onclick="trocarAba(event, 'aba-registro')"><span>➕</span> Reserva</button>
-        <button class="nav-btn" onclick="trocarAba(event, 'aba-historico')"><span>📂</span> Histórico</button>
-        <button class="nav-btn" onclick="trocarAba(event, 'aba-config')"><span>⚙️</span> Unidades</button>
+        <button class="nav-btn active" onclick="trocarAba(event, 'aba-painel')">📅 Painel</button>
+        <button class="nav-btn" onclick="trocarAba(event, 'aba-registro')">➕ Reserva</button>
+        <button class="nav-btn" onclick="trocarAba(event, 'aba-historico')">📂 Histórico</button>
+        <button class="nav-btn" onclick="trocarAba(event, 'aba-config')">⚙️ Unidades</button>
     </nav>
-    
-    <div class="footer-sidebar">
-        <button class="btn-toggle-view" onclick="toggleView()">📱 Mudar para Celular</button>
-        <div style="padding: 10px 20px; font-size: 10px; color: #566573;">V 2.0 - 2026</div>
+    <div class="footer-sidebar" style="padding: 15px;">
+        <button onclick="toggleView()" style="width:100%; padding:8px; font-size:10px; cursor:pointer; background:#2c3e50; color:white; border:1px solid #444; border-radius:5px;">📱 Modo Celular</button>
     </div>
 </aside>
 
 <main class="main-content">
-
     <div id="aba-painel" class="content-section active">
-        <h2 id="tituloHoje" style="margin-bottom: 5px;">Carregando...</h2>
+        <h2 id="tituloHoje">Carregando...</h2>
         <div class="painel-grid">
-            <div>
-                <div class="col-header bg-ent">📥 Check-in</div>
-                <div id="listaEntradas"></div>
-            </div>
-            <div>
-                <div class="col-header bg-sai">📤 Check-out</div>
-                <div id="listaSaidas"></div>
-            </div>
+            <div><div class="col-header bg-ent">📥 ENTRADAS HOJE</div><div id="listaEntradas"></div></div>
+            <div><div class="col-header bg-sai">📤 SAÍDAS HOJE</div><div id="listaSaidas"></div></div>
         </div>
     </div>
 
     <div id="aba-registro" class="content-section">
-        <h2>Nova Reserva</h2>
+        <h2>📝 Nova Reserva</h2>
         <div class="card-box">
-            <div class="form-row">
-                <div><label>Unidade</label><select id="selectApto"></select></div>
-                <div><label>Entrada</label><input type="date" id="dataEntrada"></div>
-                <div><label>Saída</label><input type="date" id="dataSaida"></div>
+            <label>Apartamento</label><select id="selectApto"></select>
+            <div style="display:flex; gap:10px;">
+                <div style="flex:1"><label>Entrada</label><input type="date" id="dataEntrada"></div>
+                <div style="flex:1"><label>Saída</label><input type="date" id="dataSaida"></div>
             </div>
-            <div id="listaNomes" style="margin-top:15px;">
-                <input type="text" class="nome-input" placeholder="Hóspede Principal" style="margin-bottom:10px; width:100%; padding:12px; border-radius:8px; border:1px solid #ddd; box-sizing:border-box;">
-            </div>
-            <button onclick="addNome()" style="background:none; border:1px dashed #aaa; padding:10px; width:100%; cursor:pointer; border-radius:8px; margin-bottom:15px;">+ Acompanhante</button>
-            <button class="btn-primary" onclick="salvar()">Salvar</button>
+            <label>Hóspedes</label>
+            <div id="listaNomes"><input type="text" class="nome-input" placeholder="Nome principal"></div>
+            <button class="btn-primary" onclick="salvar()">Sincronizar Reserva ☁️</button>
         </div>
     </div>
 
-    <div id="aba-historico" class="content-section">
-        <h2>Histórico</h2>
-        <div id="listaGeral"></div>
-    </div>
-
+    <div id="aba-historico" class="content-section"><h2>📂 Histórico Geral</h2><div id="listaGeral"></div></div>
+    
     <div id="aba-config" class="content-section">
-        <h2>Configurações</h2>
+        <h2>⚙️ Gerenciar Unidades</h2>
         <div class="card-box">
-            <label>Adicionar Unidade</label>
-            <div style="display:flex; gap:10px;">
-                <input type="text" id="novoAptoNome" placeholder="Ex: 101">
-                <button onclick="addUnidade()" style="padding:10px; background:var(--primary); color:white; border:none; border-radius:8px; cursor:pointer;">Add</button>
-            </div>
+            <input type="text" id="novoAptoNome" placeholder="Ex: Apto 101">
+            <button class="btn-primary" onclick="addUnidade()">Adicionar Unidade</button>
         </div>
         <div id="listaUnidadesCadastradas"></div>
     </div>
-
 </main>
 
 <script>
-    // --- FUNÇÃO PARA MUDAR O VISUAL ---
-    function toggleView() {
-        const body = document.getElementById('mainBody');
-        const btn = document.querySelector('.btn-toggle-view');
-        
-        if(body.classList.contains('mobile-mode')) {
-            body.classList.remove('mobile-mode');
-            btn.innerText = "📱 Mudar para Celular";
-        } else {
-            body.classList.add('mobile-mode');
-            btn.innerText = "💻 Mudar para PC";
-        }
-    }
-
-    function trocarAba(event, idSecao) {
-        document.querySelectorAll(".content-section").forEach(s => s.classList.remove("active"));
-        document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
-        document.getElementById(idSecao).classList.add("active");
-        event.currentTarget.classList.add("active");
-        if(idSecao === 'aba-painel') attPainel();
-        if(idSecao === 'aba-historico') attHist();
-        carregarDados();
-    }
+    // CONFIGURAÇÃO DO SEU FIREBASE (DENNIS)
+    const firebaseConfig = {
+        apiKey: "AIzaSyD10VDzmYJCeubBnEPGhbiddOgxazohe",
+        authDomain: "hospedafacil-30521.firebaseapp.com",
+        databaseURL: "https://hospedafacil-30521-default-rtdb.firebaseio.com/",
+        projectId: "hospedafacil-30521",
+        storageBucket: "hospedafacil-30521.firebasestorage.app",
+        messagingSenderId: "982294374795",
+        appId: "1:982294374795:web:582187cbccbe22bb7ce78e"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
     function formatar(d) { return d ? d.split('-').reverse().join('/') : ""; }
 
-    function carregarDados() {
-        const aptos = JSON.parse(localStorage.getItem('db_aptos') || '{}');
+    // --- BANCO DE DADOS EM TEMPO REAL ---
+    db.ref('aptos').on('value', snap => {
+        const aptos = snap.val() || {};
         const sel = document.getElementById('selectApto');
+        const lista = document.getElementById('listaUnidadesCadastradas');
         if(sel) {
-            sel.innerHTML = '<option value="">-- Unidade --</option>';
-            Object.keys(aptos).forEach(a => sel.innerHTML += `<option value="${a}">${a}</option>`);
-        }
-        const listaConf = document.getElementById('listaUnidadesCadastradas');
-        if(listaConf) {
-            listaConf.innerHTML = '';
+            sel.innerHTML = '<option value="">-- Selecione --</option>';
+            lista.innerHTML = '';
             Object.keys(aptos).forEach(a => {
-                listaConf.innerHTML += `
-                <div class="card-box" style="padding:10px; display:flex; justify-content:space-between; margin-bottom:5px;">
-                    <span>🏠 ${a}</span>
-                    <button onclick="delApto('${a}')" style="color:red; border:none; background:none; cursor:pointer;">Excluir</button>
-                </div>`;
+                sel.innerHTML += `<option value="${a}">${a}</option>`;
+                lista.innerHTML += `<div class="card-box" style="display:flex; justify-content:space-between; padding:10px; margin-bottom:5px;">🏠 ${a} <button onclick="db.ref('aptos/${a}').remove()" style="color:red; background:none; border:none; cursor:pointer;">Remover</button></div>`;
             });
         }
-    }
+    });
 
-    function addUnidade() {
-        const n = document.getElementById('novoAptoNome').value;
-        if(!n) return;
-        let a = JSON.parse(localStorage.getItem('db_aptos') || '{}');
-        a[n] = 'limpo';
-        localStorage.setItem('db_aptos', JSON.stringify(a));
-        document.getElementById('novoAptoNome').value = '';
-        carregarDados();
-    }
+    db.ref('reservas').on('value', snap => {
+        const reservas = snap.val() || {};
+        const hoje = new Date().toISOString().split('T')[0];
+        document.getElementById('tituloHoje').innerText = "Hoje: " + formatar(hoje);
+        
+        const cEnt = document.getElementById('listaEntradas');
+        const cSai = document.getElementById('listaSaidas');
+        const cHist = document.getElementById('listaGeral');
+        cEnt.innerHTML = ''; cSai.innerHTML = ''; cHist.innerHTML = '';
 
-    function delApto(n) {
-        if(confirm("Excluir unidade?")) {
-            let a = JSON.parse(localStorage.getItem('db_aptos'));
-            delete a[n];
-            localStorage.setItem('db_aptos', JSON.stringify(a));
-            carregarDados();
-        }
-    }
+        db.ref('aptos').once('value', aSnap => {
+            const statusAptos = aSnap.val() || {};
+            Object.keys(reservas).forEach(key => {
+                const r = reservas[key];
+                const st = statusAptos[r.apto] || 'limpo';
+                const card = `
+                    <div class="apto-card">
+                        <span class="badge badge-${st}">${st}</span>
+                        <b>🏠 ${r.apto}</b><br>
+                        <small>👤 ${r.nomes.join(', ')}</small><br>
+                        <div style="margin-top:8px; display:flex; gap:5px;">
+                            <button onclick="setLimpeza('${r.apto}','limpo')" style="font-size:9px; cursor:pointer;">Limpo</button>
+                            <button onclick="setLimpeza('${r.apto}','sujo')" style="font-size:9px; cursor:pointer;">Sujo</button>
+                        </div>
+                    </div>`;
+                
+                if(r.e === hoje) cEnt.innerHTML += card;
+                if(r.s === hoje) cSai.innerHTML += card;
+                
+                cHist.innerHTML += `<div class="card-box" style="display:flex; justify-content:space-between;">
+                    <div><b>${r.apto}</b> (${formatar(r.e)} - ${formatar(r.s)})<br><small>${r.nomes.join(', ')}</small></div>
+                    <button onclick="db.ref('reservas/${key}').remove()" style="color:red; background:none; border:none; cursor:pointer;">✕</button>
+                </div>`;
+            });
+        });
+    });
 
-    function addNome() {
-        const i = document.createElement('input');
-        i.className = 'nome-input'; i.placeholder = 'Nome';
-        i.style = "margin-bottom:10px; width:100%; padding:12px; border-radius:8px; border:1px solid #ddd; box-sizing:border-box;";
-        document.getElementById('listaNomes').appendChild(i);
-    }
-
+    // --- AÇÕES ---
     function salvar() {
         const apto = document.getElementById('selectApto').value;
         const e = document.getElementById('dataEntrada').value;
         const s = document.getElementById('dataSaida').value;
         const nomes = Array.from(document.querySelectorAll('.nome-input')).map(i => i.value).filter(v => v);
         if(!apto || !e || !s || nomes.length == 0) return alert("Preencha tudo!");
-        let res = JSON.parse(localStorage.getItem('db_res') || '[]');
-        res.push({id: Date.now(), apto, e, s, nomes});
-        localStorage.setItem('db_res', JSON.stringify(res));
-        alert("Salvo!");
-        location.reload();
-    }
-
-    function attPainel() {
-        const hoje = new Date().toISOString().split('T')[0];
-        document.getElementById('tituloHoje').innerText = formatar(hoje);
-        const res = JSON.parse(localStorage.getItem('db_res') || '[]');
-        const status = JSON.parse(localStorage.getItem('db_aptos') || '{}');
-        const cEnt = document.getElementById('listaEntradas');
-        const cSai = document.getElementById('listaSaidas');
-        cEnt.innerHTML = ''; cSai.innerHTML = '';
-
-        res.filter(r => r.e === hoje).forEach(r => cEnt.innerHTML += criarCard(r, status[r.apto]));
-        res.filter(r => r.s === hoje).forEach(r => cSai.innerHTML += criarCard(r, status[r.apto]));
-    }
-
-    function criarCard(r, st) {
-        return `
-            <div class="apto-card">
-                <div class="apto-card-head">
-                    <span>${r.apto}</span>
-                    <span class="badge badge-${st}">${st}</span>
-                </div>
-                <div class="apto-card-body">
-                    <span class="pill">📅 ${formatar(r.e)} - ${formatar(r.s)}</span>
-                    <div style="font-size:12px; margin-bottom:10px;">👤 ${r.nomes.join(', ')}</div>
-                    <div style="display:flex; gap:5px;">
-                        <button onclick="setLimpeza('${r.apto}', 'limpo')" style="font-size:10px; cursor:pointer;">Limpo</button>
-                        <button onclick="setLimpeza('${r.apto}', 'sujo')" style="font-size:10px; cursor:pointer;">Sujo</button>
-                    </div>
-                </div>
-            </div>`;
-    }
-
-    function setLimpeza(a, s) {
-        let db = JSON.parse(localStorage.getItem('db_aptos'));
-        db[a] = s;
-        localStorage.setItem('db_aptos', JSON.stringify(db));
-        attPainel();
-    }
-
-    function attHist() {
-        const res = JSON.parse(localStorage.getItem('db_res') || '[]');
-        const c = document.getElementById('listaGeral');
-        c.innerHTML = '';
-        res.sort((a,b) => b.id - a.id).forEach(r => {
-            c.innerHTML += `
-            <div class="card-box" style="padding:15px; display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                <div><strong>${r.apto}</strong><br><small>${formatar(r.e)} a ${formatar(r.s)}</small></div>
-                <button onclick="delRes(${r.id})" style="color:red; border:none; background:none; cursor:pointer;">✕</button>
-            </div>`;
+        
+        db.ref('reservas').push({ apto, e, s, nomes }).then(() => {
+            alert("Reserva enviada para a nuvem!");
+            trocarAba(null, 'aba-painel');
         });
     }
 
-    function delRes(id) {
-        if(confirm("Excluir?")) {
-            let r = JSON.parse(localStorage.getItem('db_res'));
-            r = r.filter(x => x.id !== id);
-            localStorage.setItem('db_res', JSON.stringify(r));
-            attHist();
-        }
+    function addUnidade() {
+        const n = document.getElementById('novoAptoNome').value;
+        if(n) db.ref('aptos/' + n).set('limpo').then(() => document.getElementById('novoAptoNome').value = '');
     }
 
-    carregarDados();
-    attPainel();
-</script>
+    function setLimpeza(apto, status) { db.ref('aptos/' + apto).set(status); }
 
+    function trocarAba(event, id) {
+        document.querySelectorAll(".content-section").forEach(s => s.classList.remove("active"));
+        document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
+        document.getElementById(id).classList.add("active");
+        if(event) event.currentTarget.classList.add("active");
+    }
+
+    function toggleView() { document.getElementById('mainBody').classList.toggle('mobile-mode'); }
+</script>
 </body>
 </html>
