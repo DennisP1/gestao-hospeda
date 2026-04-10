@@ -7,8 +7,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     <style>
-        :root { --sidebar-width: 240px; --bg-body: #f4f7f9; --bg-card: #ffffff; --primary: #3498db; --text-main: #2c3e50; --success: #2ecc71; --danger: #e74c3c; --border: #e1e8ed; }
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg-body); margin: 0; display: flex; height: 100vh; color: var(--text-main); }
+        :root { --sidebar-width: 240px; --bg-body: #f4f7f9; --primary: #3498db; --success: #2ecc71; --danger: #e74c3c; --border: #e1e8ed; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg-body); margin: 0; display: flex; height: 100vh; color: #2c3e50; }
         .sidebar { width: var(--sidebar-width); background: #1a252f; color: white; display: flex; flex-direction: column; }
         .sidebar-header { padding: 30px 20px; font-weight: 800; border-bottom: 1px solid #2c3e50; }
         .sidebar-nav { flex: 1; padding: 10px 0; }
@@ -23,19 +23,20 @@
         .bg-ent { background: rgba(46, 204, 113, 0.1); color: var(--success); }
         .bg-sai { background: rgba(231, 76, 60, 0.1); color: var(--danger); }
         .apto-card { border: 1px solid var(--border); border-radius: 10px; margin-bottom: 10px; background: white; padding: 15px; }
-        .badge { padding: 4px 10px; border-radius: 20px; font-size: 10px; color: white; float: right; text-transform: uppercase; font-weight: 800; }
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; color: white; float: right; text-transform: uppercase; font-weight: 800; }
         .badge-limpo { background: var(--success); }
         .badge-sujo { background: var(--danger); }
+        .btn-limpeza { padding: 12px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; color: white; flex: 1; }
+        .btn-set-limpo { background: var(--success); }
+        .btn-set-sujo { background: var(--danger); }
         input, select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 10px; box-sizing: border-box; }
         .btn-primary { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; }
-        .btn-status { border: 1px solid #ddd; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 11px; margin-top: 10px; font-weight: bold; transition: 0.2s; }
-        .btn-status:hover { background: #eee; }
         
         body.mobile-mode { flex-direction: column; }
-        body.mobile-mode .sidebar { width: 100%; height: 65px; flex-direction: row; position: fixed; bottom: 0; }
+        body.mobile-mode .sidebar { width: 100%; height: 65px; flex-direction: row; position: fixed; bottom: 0; z-index: 100; }
         body.mobile-mode .sidebar-header, body.mobile-mode .footer-sidebar { display: none; }
         body.mobile-mode .sidebar-nav { display: flex; width: 100%; justify-content: space-around; padding: 0; }
-        body.mobile-mode .nav-btn { flex-direction: column; font-size: 9px; padding: 10px; text-align: center; justify-content: center; gap: 2px; }
+        body.mobile-mode .nav-btn { flex-direction: column; font-size: 8px; padding: 10px 5px; text-align: center; justify-content: center; gap: 2px; }
         body.mobile-mode .main-content { padding: 15px; padding-bottom: 90px; }
         body.mobile-mode .painel-grid { grid-template-columns: 1fr; }
     </style>
@@ -46,9 +47,10 @@
     <div class="sidebar-header">🏢 HOSPEDA+ CLOUD</div>
     <nav class="sidebar-nav">
         <button class="nav-btn active" onclick="trocarAba(event, 'aba-painel')">📅 Painel</button>
+        <button class="nav-btn" onclick="trocarAba(event, 'aba-limpeza')">🧹 Limpeza</button>
         <button class="nav-btn" onclick="trocarAba(event, 'aba-registro')">➕ Reserva</button>
         <button class="nav-btn" onclick="trocarAba(event, 'aba-historico')">📂 Histórico</button>
-        <button class="nav-btn" onclick="trocarAba(event, 'aba-config')">⚙️ Unidades</button>
+        <button class="nav-btn" onclick="trocarAba(event, 'aba-config')">⚙️ Config</button>
     </nav>
     <div class="footer-sidebar" style="padding: 15px;">
         <button onclick="toggleView()" style="width:100%; padding:8px; font-size:10px; cursor:pointer;">📱 Mudar Visual</button>
@@ -59,34 +61,39 @@
     <div id="aba-painel" class="content-section active">
         <h2 id="tituloHoje">Carregando...</h2>
         <div class="painel-grid">
-            <div><div class="col-header bg-ent">📥 CHECK-IN (ENTRADAS)</div><div id="listaEntradas"></div></div>
-            <div><div class="col-header bg-sai">📤 CHECK-OUT (SAÍDAS)</div><div id="listaSaidas"></div></div>
+            <div><div class="col-header bg-ent">📥 ENTRADAS</div><div id="listaEntradas"></div></div>
+            <div><div class="col-header bg-sai">📤 SAÍDAS</div><div id="listaSaidas"></div></div>
         </div>
+    </div>
+
+    <div id="aba-limpeza" class="content-section">
+        <h2>🧹 Governança e Limpeza</h2>
+        <p style="font-size: 13px; color: #666;">Altere o status das unidades aqui.</p>
+        <div id="listaControleLimpeza"></div>
     </div>
 
     <div id="aba-registro" class="content-section">
         <h2>📝 Nova Reserva</h2>
         <div class="card-box">
-            <label>Escolha a Unidade</label>
-            <select id="selectApto"></select>
+            <label>Unidade</label><select id="selectApto"></select>
             <div style="display:flex; gap:10px;">
-                <div style="flex:1"><label>Data Entrada</label><input type="date" id="dataEntrada"></div>
-                <div style="flex:1"><label>Data Saída</label><input type="date" id="dataSaida"></div>
+                <div style="flex:1"><label>Entrada</label><input type="date" id="dataEntrada"></div>
+                <div style="flex:1"><label>Saída</label><input type="date" id="dataSaida"></div>
             </div>
             <label>Hóspedes</label>
             <div id="containerNomes"><input type="text" class="nome-input" placeholder="Nome completo"></div>
             <button onclick="adicionarCampoNome()" style="margin: 10px 0; cursor:pointer;">+ Adicionar Acompanhante</button>
-            <button class="btn-primary" onclick="salvar()">Sincronizar na Nuvem ☁️</button>
+            <button class="btn-primary" onclick="salvar()">Sincronizar Reserva ☁️</button>
         </div>
     </div>
 
-    <div id="aba-historico" class="content-section"><h2>📂 Histórico de Reservas</h2><div id="listaGeral"></div></div>
+    <div id="aba-historico" class="content-section"><h2>📂 Histórico</h2><div id="listaGeral"></div></div>
     
     <div id="aba-config" class="content-section">
-        <h2>⚙️ Configurar Unidades</h2>
+        <h2>⚙️ Unidades</h2>
         <div class="card-box">
-            <input type="text" id="novoAptoNome" placeholder="Ex: Apartamento 202">
-            <button class="btn-primary" onclick="addUnidade()">Salvar Nova Unidade</button>
+            <input type="text" id="novoAptoNome" placeholder="Ex: Apto 101">
+            <button class="btn-primary" onclick="addUnidade()">Adicionar Unidade</button>
         </div>
         <div id="listaUnidadesCadastradas"></div>
     </div>
@@ -106,45 +113,47 @@
     const db = firebase.database();
 
     function formatar(d) { return d ? d.split('-').reverse().join('/') : ""; }
-
     function adicionarCampoNome() {
         const input = document.createElement('input');
         input.type = 'text'; input.className = 'nome-input'; input.placeholder = 'Nome do acompanhante';
         document.getElementById('containerNomes').appendChild(input);
     }
 
-    // Variáveis globais para armazenar os dados e permitir atualização cruzada
     let dadosReservas = {};
     let dadosAptos = {};
 
-    // Escuta mudanças nos apartamentos (Status de limpeza)
-    db.ref('aptos').on('value', snap => {
-        dadosAptos = snap.val() || {};
-        renderizarTudo();
-    });
-
-    // Escuta mudanças nas reservas
-    db.ref('reservas').on('value', snap => {
-        dadosReservas = snap.val() || {};
-        renderizarTudo();
-    });
+    db.ref('aptos').on('value', snap => { dadosAptos = snap.val() || {}; renderizarTudo(); });
+    db.ref('reservas').on('value', snap => { dadosReservas = snap.val() || {}; renderizarTudo(); });
 
     function renderizarTudo() {
         const hoje = new Date().toISOString().split('T')[0];
-        document.getElementById('tituloHoje').innerText = "Painel do Dia: " + formatar(hoje);
+        document.getElementById('tituloHoje').innerText = "Painel: " + formatar(hoje);
         
-        // Renderizar SELECT e CONFIG
         const sel = document.getElementById('selectApto');
         const listaConf = document.getElementById('listaUnidadesCadastradas');
-        sel.innerHTML = '<option value="">-- Selecione a Unidade --</option>';
+        const listaLimpeza = document.getElementById('listaControleLimpeza');
+        sel.innerHTML = '<option value="">-- Selecione --</option>';
         listaConf.innerHTML = '';
+        listaLimpeza.innerHTML = '';
         
+        // Renderiza Unidades e Aba Limpeza
         Object.keys(dadosAptos).forEach(a => {
             sel.innerHTML += `<option value="${a}">${a}</option>`;
-            listaConf.innerHTML += `<div class="card-box" style="display:flex; justify-content:space-between; padding:10px; margin-bottom:5px;">🏠 ${a} <button onclick="db.ref('aptos/${a}').remove()" style="color:red; border:none; background:none; cursor:pointer;">Excluir</button></div>`;
+            listaConf.innerHTML += `<div class="card-box" style="display:flex; justify-content:space-between; padding:10px;">🏠 ${a} <button onclick="db.ref('aptos/${a}').remove()" style="color:red; border:none; background:none; cursor:pointer;">Excluir</button></div>`;
+            
+            const st = dadosAptos[a] || 'limpo';
+            listaLimpeza.innerHTML += `
+                <div class="card-box">
+                    <span class="badge badge-${st}">${st}</span>
+                    <b>🏠 ${a}</b>
+                    <div style="display:flex; gap:10px; margin-top:15px;">
+                        <button class="btn-limpeza btn-set-limpo" onclick="setLimpeza('${a}', 'limpo')">MARCAR COMO LIMPO</button>
+                        <button class="btn-limpeza btn-set-sujo" onclick="setLimpeza('${a}', 'sujo')">MARCAR COMO SUJO</button>
+                    </div>
+                </div>`;
         });
 
-        // Renderizar PAINEL e HISTÓRICO
+        // Renderiza Painel e Histórico
         const cEnt = document.getElementById('listaEntradas');
         const cSai = document.getElementById('listaSaidas');
         const cHist = document.getElementById('listaGeral');
@@ -152,18 +161,19 @@
 
         Object.keys(dadosReservas).forEach(key => {
             const r = dadosReservas[key];
-            const st = dadosAptos[r.apto] || 'limpo';
+            let st = dadosAptos[r.apto] || 'limpo';
+
+            // LÓGICA AUTOMÁTICA: Se hoje é dia de Check-out, forçar status "sujo"
+            if (r.s === hoje && st !== 'sujo') {
+                setLimpeza(r.apto, 'sujo');
+                st = 'sujo';
+            }
+
             const nomesStr = Array.isArray(r.nomes) ? r.nomes.join(', ') : r.nomes;
-            
             const cardHtml = `
                 <div class="apto-card">
                     <span class="badge badge-${st}">${st}</span>
-                    <b>🏠 ${r.apto}</b><br>
-                    <small>👤 ${nomesStr}</small><br>
-                    <div style="display:flex; gap:8px;">
-                        <button class="btn-status" onclick="setLimpeza('${r.apto}', 'limpo')">✅ Limpo</button>
-                        <button class="btn-status" onclick="setLimpeza('${r.apto}', 'sujo')">⚠️ Sujo</button>
-                    </div>
+                    <b>🏠 ${r.apto}</b><br><small>👤 ${nomesStr}</small>
                 </div>`;
 
             if(r.e === hoje) cEnt.innerHTML += cardHtml;
@@ -171,7 +181,7 @@
             
             cHist.innerHTML += `<div class="card-box" style="display:flex; justify-content:space-between; align-items:center;">
                 <div><b>${r.apto}</b> (${formatar(r.e)} - ${formatar(r.s)})<br><small>${nomesStr}</small></div>
-                <button onclick="db.ref('reservas/${key}').remove()" style="color:red; border:none; background:none; cursor:pointer; font-size:18px;">✕</button>
+                <button onclick="db.ref('reservas/${key}').remove()" style="color:red; border:none; background:none; cursor:pointer;">✕</button>
             </div>`;
         });
     }
@@ -181,10 +191,9 @@
         const e = document.getElementById('dataEntrada').value;
         const s = document.getElementById('dataSaida').value;
         const nomes = Array.from(document.querySelectorAll('.nome-input')).map(i => i.value).filter(v => v);
-        if(!apto || !e || !s || nomes.length == 0) return alert("Por favor, preencha todos os campos!");
-        
+        if(!apto || !e || !s || nomes.length == 0) return alert("Preencha tudo!");
         db.ref('reservas').push({ apto, e, s, nomes }).then(() => {
-            alert("Reserva salva com sucesso!");
+            alert("Sucesso!");
             document.getElementById('containerNomes').innerHTML = '<input type="text" class="nome-input" placeholder="Nome completo">';
             trocarAba(null, 'aba-painel');
         });
@@ -195,10 +204,7 @@
         if(n) db.ref('aptos/' + n).set('limpo').then(() => document.getElementById('novoAptoNome').value = '');
     }
 
-    function setLimpeza(aptoNome, novoStatus) {
-        // Atualiza no Firebase. O evento 'on value' lá em cima vai detectar e atualizar a tela automaticamente.
-        db.ref('aptos/' + aptoNome).set(novoStatus);
-    }
+    function setLimpeza(aptoNome, novoStatus) { db.ref('aptos/' + aptoNome).set(novoStatus); }
 
     function trocarAba(event, id) {
         document.querySelectorAll(".content-section").forEach(s => s.classList.remove("active"));
@@ -206,7 +212,6 @@
         document.getElementById(id).classList.add("active");
         if(event) event.currentTarget.classList.add("active");
     }
-
     function toggleView() { document.getElementById('mainBody').classList.toggle('mobile-mode'); }
 </script>
 </body>
