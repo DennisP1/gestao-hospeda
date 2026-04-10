@@ -68,7 +68,6 @@
 
     <div id="aba-limpeza" class="content-section">
         <h2>🧹 Controle de Limpeza</h2>
-        <p style="font-size: 12px; color: #666; margin-bottom: 20px;">Nota: Apartamentos em uso ficam sujos automaticamente.</p>
         <div id="listaControleLimpeza"></div>
     </div>
 
@@ -136,19 +135,21 @@
         listaConf.innerHTML = '';
         listaLimpeza.innerHTML = '';
         
-        // Renderiza Aba Limpeza e Config
         Object.keys(dadosAptos).forEach(a => {
             sel.innerHTML += `<option value="${a}">${a}</option>`;
             listaConf.innerHTML += `<div class="card-box" style="display:flex; justify-content:space-between; padding:10px;">🏠 ${a} <button onclick="db.ref('aptos/${a}').remove()" style="color:red; border:none; background:none; cursor:pointer;">✕</button></div>`;
             
-            const st = dadosAptos[a] || 'limpo';
+            // Pega o status e a data da última limpeza
+            const info = dadosAptos[a] || {status: 'limpo'};
+            const st = typeof info === 'string' ? info : info.status;
+            
             listaLimpeza.innerHTML += `
                 <div class="card-box">
                     <span class="badge badge-${st}">${st}</span>
                     <b>🏠 ${a}</b>
                     <div style="display:flex; gap:10px; margin-top:15px;">
-                        <button class="btn-limpeza btn-set-limpo" onclick="setLimpeza('${a}', 'limpo')">✅ LIMPAR</button>
-                        <button class="btn-limpeza btn-set-sujo" onclick="setLimpeza('${a}', 'sujo')">⚠️ SUJAR</button>
+                        <button class="btn-limpeza btn-set-limpo" onclick="setLimpeza('${a}', 'limpo')">✅ LIMPAR HOJE</button>
+                        <button class="btn-limpeza btn-set-sujo" onclick="setLimpeza('${a}', 'sujo')">⚠️ MARCAR SUJO</button>
                     </div>
                 </div>`;
         });
@@ -160,16 +161,20 @@
 
         Object.keys(dadosReservas).forEach(key => {
             const r = dadosReservas[key];
-            const st = dadosAptos[r.apto] || 'limpo';
-            const nomesStr = Array.isArray(r.nomes) ? r.nomes.join(', ') : r.nomes;
+            const info = dadosAptos[r.apto] || {status: 'limpo', data: ''};
+            let st = typeof info === 'string' ? info : info.status;
+            let dataLimpeza = info.data || '';
 
-            // NOVA LÓGICA AUTOMÁTICA: 
-            // Se hoje estiver entre a data de entrada (r.e) e saída (r.s), o apto fica sujo.
-            if (hoje >= r.e && hoje <= r.s && st !== 'sujo') {
-                setLimpeza(r.apto, 'sujo');
+            // LÓGICA ATUALIZADA:
+            // Se hoje estiver entre entrada e saída
+            if (hoje >= r.e && hoje <= r.s) {
+                // SÓ marca como sujo se HOJE NÃO FOR o dia que você limpou manualmente
+                if (dataLimpeza !== hoje && st !== 'sujo') {
+                    setLimpeza(r.apto, 'sujo', false); // O false evita atualizar a data ao sujar automático
+                }
             }
 
-            const cardEntrada = `<div class="apto-card"><span class="badge badge-${st}">${st}</span><b>🏠 ${r.apto}</b><br><small>👤 ${nomesStr}</small></div>`;
+            const cardEntrada = `<div class="apto-card"><span class="badge badge-${st}">${st}</span><b>🏠 ${r.apto}</b><br><small>👤 ${nomesStr = Array.isArray(r.nomes) ? r.nomes.join(', ') : r.nomes}</small></div>`;
             const cardSaida = `<div class="apto-card"><b>🏠 ${r.apto}</b><br><small>👤 ${nomesStr}</small></div>`;
 
             if(r.e === hoje) cEnt.innerHTML += cardEntrada;
@@ -197,10 +202,16 @@
 
     function addUnidade() {
         const n = document.getElementById('novoAptoNome').value;
-        if(n) db.ref('aptos/' + n).set('limpo').then(() => document.getElementById('novoAptoNome').value = '');
+        if(n) db.ref('aptos/' + n).set({status: 'limpo', data: ''}).then(() => document.getElementById('novoAptoNome').value = '');
     }
 
-    function setLimpeza(aptoNome, novoStatus) { db.ref('aptos/' + aptoNome).set(novoStatus); }
+    function setLimpeza(aptoNome, novoStatus, atualizarData = true) {
+        const hoje = new Date().toISOString().split('T')[0];
+        const dados = { status: novoStatus };
+        if (atualizarData) dados.data = hoje; // Salva que foi limpo HOJE manualmente
+        
+        db.ref('aptos/' + aptoNome).update(dados);
+    }
 
     function trocarAba(event, id) {
         document.querySelectorAll(".content-section").forEach(s => s.classList.remove("active"));
