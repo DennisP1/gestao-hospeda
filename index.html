@@ -22,14 +22,13 @@
         .col-header { padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; margin-bottom: 15px; font-size: 13px; }
         .bg-ent { background: rgba(46, 204, 113, 0.1); color: var(--success); }
         .bg-sai { background: rgba(231, 76, 60, 0.1); color: var(--danger); }
-        .apto-card { border: 1px solid var(--border); border-radius: 10px; margin-bottom: 10px; background: white; padding: 15px; }
+        .apto-card { border: 1px solid var(--border); border-radius: 10px; margin-bottom: 10px; background: white; padding: 15px; position: relative; }
+        .date-badge { font-size: 10px; color: #7f8c8d; background: #f8f9fa; padding: 2px 6px; border-radius: 4px; border: 1px solid #eee; margin-top: 5px; display: inline-block; }
         input, select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 10px; box-sizing: border-box; }
         .btn-primary { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; }
-        
-        /* Estilo para os campos de nome e CPF lado a lado */
         .hospede-row { display: flex; gap: 10px; margin-bottom: 5px; }
-        .hospede-row input:first-child { flex: 2; } /* Nome maior */
-        .hospede-row input:last-child { flex: 1; }  /* CPF menor */
+        .hospede-row input:first-child { flex: 2; } 
+        .hospede-row input:last-child { flex: 1; }
 
         body.mobile-mode { flex-direction: column; }
         body.mobile-mode .sidebar { width: 100%; height: 65px; flex-direction: row; position: fixed; bottom: 0; z-index: 100; }
@@ -114,10 +113,7 @@
     function adicionarCampoHospede() {
         const div = document.createElement('div');
         div.className = 'hospede-row';
-        div.innerHTML = `
-            <input type="text" class="nome-input" placeholder="Nome completo">
-            <input type="text" class="cpf-input" placeholder="CPF">
-        `;
+        div.innerHTML = `<input type="text" class="nome-input" placeholder="Nome completo"><input type="text" class="cpf-input" placeholder="CPF">`;
         document.getElementById('containerHospedes').appendChild(div);
     }
 
@@ -148,16 +144,20 @@
 
         Object.keys(dadosReservas).forEach(key => {
             const r = dadosReservas[key];
-            
-            // Monta o texto de exibição dos hóspedes com CPF
             let hospedesHTML = '';
             if (r.hospedes && Array.isArray(r.hospedes)) {
                 hospedesHTML = r.hospedes.map(h => `👤 ${h.nome} <br> <small style="color:#7f8c8d; margin-left:18px;">CPF: ${h.cpf || 'N/A'}</small>`).join('<br>');
             } else {
-                hospedesHTML = `👤 ${r.nomes || 'Sem nome'}`;
+                hospedesHTML = `👤 ${r.nomes || 'Hóspede'}`;
             }
 
-            const cardHtml = `<div class="apto-card"><b>🏠 ${r.apto}</b><br>${hospedesHTML}</div>`;
+            // NOVA EXIBIÇÃO: Apartamento + Período + Hóspedes
+            const cardHtml = `
+                <div class="apto-card">
+                    <b>🏠 ${r.apto}</b>
+                    <div class="date-badge">📅 ${formatar(r.e)} até ${formatar(r.s)}</div>
+                    <div style="margin-top:8px;">${hospedesHTML}</div>
+                </div>`;
 
             if(r.e === hoje) cEnt.innerHTML += cardHtml;
             if(r.s === hoje) cSai.innerHTML += cardHtml;
@@ -173,29 +173,30 @@
         const apto = document.getElementById('selectApto').value;
         const e = document.getElementById('dataEntrada').value;
         const s = document.getElementById('dataSaida').value;
-        
         const nomesInputs = document.querySelectorAll('.nome-input');
         const cpfInputs = document.querySelectorAll('.cpf-input');
         
         const hospedes = [];
         for (let i = 0; i < nomesInputs.length; i++) {
             if (nomesInputs[i].value) {
-                hospedes.push({
-                    nome: nomesInputs[i].value,
-                    cpf: cpfInputs[i].value
-                });
+                hospedes.push({ nome: nomesInputs[i].value, cpf: cpfInputs[i].value });
             }
         }
 
-        if(!apto || !e || !s || hospedes.length == 0) return alert("Preencha todos os campos!");
+        if(!apto || !e || !s || hospedes.length == 0) return alert("Preencha tudo!");
+        if(e >= s) return alert("A data de saída deve ser após a entrada!");
+
+        const conflito = Object.values(dadosReservas).find(r => {
+            return r.apto === apto && ( (e >= r.e && e < r.s) || (s > r.e && s <= r.s) || (e <= r.e && s >= r.s) );
+        });
+
+        if (conflito) return alert(`⚠️ CONFLITO: Unidade ocupada até ${formatar(conflito.s)}.`);
         
         db.ref('reservas').push({ apto, e, s, hospedes }).then(() => {
-            alert("Reserva Sincronizada!");
-            document.getElementById('containerHospedes').innerHTML = `
-                <div class="hospede-row">
-                    <input type="text" class="nome-input" placeholder="Nome completo">
-                    <input type="text" class="cpf-input" placeholder="CPF">
-                </div>`;
+            alert("Reserva Salva! ✅");
+            document.getElementById('containerHospedes').innerHTML = `<div class="hospede-row"><input type="text" class="nome-input" placeholder="Nome completo"><input type="text" class="cpf-input" placeholder="CPF"></div>`;
+            document.getElementById('dataEntrada').value = '';
+            document.getElementById('dataSaida').value = '';
             trocarAba(null, 'aba-painel');
         });
     }
