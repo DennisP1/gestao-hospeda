@@ -23,6 +23,12 @@
         .bg-ent { background: rgba(46, 204, 113, 0.1); color: var(--success); }
         .bg-sai { background: rgba(231, 76, 60, 0.1); color: var(--danger); }
         .apto-card { border: 1px solid var(--border); border-radius: 10px; margin-bottom: 10px; background: white; padding: 15px; }
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; color: white; float: right; text-transform: uppercase; font-weight: 800; }
+        .badge-limpo { background: var(--success); }
+        .badge-sujo { background: var(--danger); }
+        .btn-limpeza { padding: 12px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; color: white; flex: 1; }
+        .btn-set-limpo { background: var(--success); }
+        .btn-set-sujo { background: var(--danger); }
         input, select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 10px; box-sizing: border-box; }
         .btn-primary { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; }
         
@@ -41,9 +47,10 @@
     <div class="sidebar-header">🏢 HOSPEDA+ CLOUD</div>
     <nav class="sidebar-nav">
         <button class="nav-btn active" onclick="trocarAba(event, 'aba-painel')">📅 Painel</button>
+        <button class="nav-btn" onclick="trocarAba(event, 'aba-limpeza')">🧹 Limpeza</button>
         <button class="nav-btn" onclick="trocarAba(event, 'aba-registro')">➕ Reserva</button>
         <button class="nav-btn" onclick="trocarAba(event, 'aba-historico')">📂 Histórico</button>
-        <button class="nav-btn" onclick="trocarAba(event, 'aba-config')">⚙️ Unidades</button>
+        <button class="nav-btn" onclick="trocarAba(event, 'aba-config')">⚙️ Config</button>
     </nav>
     <div class="footer-sidebar" style="padding: 15px;">
         <button onclick="toggleView()" style="width:100%; padding:8px; font-size:10px; cursor:pointer;">📱 Mudar Visual</button>
@@ -57,6 +64,11 @@
             <div><div class="col-header bg-ent">📥 CHECK-IN (ENTRADAS)</div><div id="listaEntradas"></div></div>
             <div><div class="col-header bg-sai">📤 CHECK-OUT (SAÍDAS)</div><div id="listaSaidas"></div></div>
         </div>
+    </div>
+
+    <div id="aba-limpeza" class="content-section">
+        <h2>🧹 Controle de Limpeza</h2>
+        <div id="listaControleLimpeza"></div>
     </div>
 
     <div id="aba-registro" class="content-section">
@@ -74,12 +86,12 @@
         </div>
     </div>
 
-    <div id="aba-historico" class="content-section"><h2>📂 Histórico Geral</h2><div id="listaGeral"></div></div>
+    <div id="aba-historico" class="content-section"><h2>📂 Histórico</h2><div id="listaGeral"></div></div>
     
     <div id="aba-config" class="content-section">
-        <h2>⚙️ Gerenciar Unidades</h2>
+        <h2>⚙️ Unidades</h2>
         <div class="card-box">
-            <input type="text" id="novoAptoNome" placeholder="Ex: Apartamento 101">
+            <input type="text" id="novoAptoNome" placeholder="Ex: Apto 101">
             <button class="btn-primary" onclick="addUnidade()">Adicionar Unidade</button>
         </div>
         <div id="listaUnidadesCadastradas"></div>
@@ -118,12 +130,28 @@
         
         const sel = document.getElementById('selectApto');
         const listaConf = document.getElementById('listaUnidadesCadastradas');
+        const listaLimpeza = document.getElementById('listaControleLimpeza');
         sel.innerHTML = '<option value="">-- Selecione --</option>';
         listaConf.innerHTML = '';
+        listaLimpeza.innerHTML = '';
         
         Object.keys(dadosAptos).forEach(a => {
             sel.innerHTML += `<option value="${a}">${a}</option>`;
             listaConf.innerHTML += `<div class="card-box" style="display:flex; justify-content:space-between; padding:10px;">🏠 ${a} <button onclick="db.ref('aptos/${a}').remove()" style="color:red; border:none; background:none; cursor:pointer;">✕</button></div>`;
+            
+            // Pega o status e a data da última limpeza
+            const info = dadosAptos[a] || {status: 'limpo'};
+            const st = typeof info === 'string' ? info : info.status;
+            
+            listaLimpeza.innerHTML += `
+                <div class="card-box">
+                    <span class="badge badge-${st}">${st}</span>
+                    <b>🏠 ${a}</b>
+                    <div style="display:flex; gap:10px; margin-top:15px;">
+                        <button class="btn-limpeza btn-set-limpo" onclick="setLimpeza('${a}', 'limpo')">✅ LIMPAR HOJE</button>
+                        <button class="btn-limpeza btn-set-sujo" onclick="setLimpeza('${a}', 'sujo')">⚠️ MARCAR SUJO</button>
+                    </div>
+                </div>`;
         });
 
         const cEnt = document.getElementById('listaEntradas');
@@ -133,12 +161,24 @@
 
         Object.keys(dadosReservas).forEach(key => {
             const r = dadosReservas[key];
-            const nomesStr = Array.isArray(r.nomes) ? r.nomes.join(', ') : r.nomes;
+            const info = dadosAptos[r.apto] || {status: 'limpo', data: ''};
+            let st = typeof info === 'string' ? info : info.status;
+            let dataLimpeza = info.data || '';
 
-            const cardHtml = `<div class="apto-card"><b>🏠 ${r.apto}</b><br><small>👤 ${nomesStr}</small></div>`;
+            // LÓGICA ATUALIZADA:
+            // Se hoje estiver entre entrada e saída
+            if (hoje >= r.e && hoje <= r.s) {
+                // SÓ marca como sujo se HOJE NÃO FOR o dia que você limpou manualmente
+                if (dataLimpeza !== hoje && st !== 'sujo') {
+                    setLimpeza(r.apto, 'sujo', false); // O false evita atualizar a data ao sujar automático
+                }
+            }
 
-            if(r.e === hoje) cEnt.innerHTML += cardHtml;
-            if(r.s === hoje) cSai.innerHTML += cardHtml;
+            const cardEntrada = `<div class="apto-card"><span class="badge badge-${st}">${st}</span><b>🏠 ${r.apto}</b><br><small>👤 ${nomesStr = Array.isArray(r.nomes) ? r.nomes.join(', ') : r.nomes}</small></div>`;
+            const cardSaida = `<div class="apto-card"><b>🏠 ${r.apto}</b><br><small>👤 ${nomesStr}</small></div>`;
+
+            if(r.e === hoje) cEnt.innerHTML += cardEntrada;
+            if(r.s === hoje) cSai.innerHTML += cardSaida;
             
             cHist.innerHTML += `<div class="card-box" style="display:flex; justify-content:space-between; align-items:center;">
                 <div><b>${r.apto}</b> (${formatar(r.e)} - ${formatar(r.s)})<br><small>${nomesStr}</small></div>
@@ -152,7 +192,7 @@
         const e = document.getElementById('dataEntrada').value;
         const s = document.getElementById('dataSaida').value;
         const nomes = Array.from(document.querySelectorAll('.nome-input')).map(i => i.value).filter(v => v);
-        if(!apto || !e || !s || nomes.length == 0) return alert("Preencha todos os campos!");
+        if(!apto || !e || !s || nomes.length == 0) return alert("Preencha tudo!");
         db.ref('reservas').push({ apto, e, s, nomes }).then(() => {
             alert("Reserva Sincronizada!");
             document.getElementById('containerNomes').innerHTML = '<input type="text" class="nome-input" placeholder="Nome completo">';
@@ -162,7 +202,15 @@
 
     function addUnidade() {
         const n = document.getElementById('novoAptoNome').value;
-        if(n) db.ref('aptos/' + n).set(true).then(() => document.getElementById('novoAptoNome').value = '');
+        if(n) db.ref('aptos/' + n).set({status: 'limpo', data: ''}).then(() => document.getElementById('novoAptoNome').value = '');
+    }
+
+    function setLimpeza(aptoNome, novoStatus, atualizarData = true) {
+        const hoje = new Date().toISOString().split('T')[0];
+        const dados = { status: novoStatus };
+        if (atualizarData) dados.data = hoje; // Salva que foi limpo HOJE manualmente
+        
+        db.ref('aptos/' + aptoNome).update(dados);
     }
 
     function trocarAba(event, id) {
