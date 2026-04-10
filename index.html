@@ -61,14 +61,13 @@
     <div id="aba-painel" class="content-section active">
         <h2 id="tituloHoje">Carregando...</h2>
         <div class="painel-grid">
-            <div><div class="col-header bg-ent">📥 ENTRADAS</div><div id="listaEntradas"></div></div>
-            <div><div class="col-header bg-sai">📤 SAÍDAS</div><div id="listaSaidas"></div></div>
+            <div><div class="col-header bg-ent">📥 CHECK-IN (ENTRADAS)</div><div id="listaEntradas"></div></div>
+            <div><div class="col-header bg-sai">📤 CHECK-OUT (SAÍDAS)</div><div id="listaSaidas"></div></div>
         </div>
     </div>
 
     <div id="aba-limpeza" class="content-section">
-        <h2>🧹 Governança e Limpeza</h2>
-        <p style="font-size: 13px; color: #666;">Altere o status das unidades aqui.</p>
+        <h2>🧹 Controle de Limpeza</h2>
         <div id="listaControleLimpeza"></div>
     </div>
 
@@ -82,7 +81,7 @@
             </div>
             <label>Hóspedes</label>
             <div id="containerNomes"><input type="text" class="nome-input" placeholder="Nome completo"></div>
-            <button onclick="adicionarCampoNome()" style="margin: 10px 0; cursor:pointer;">+ Adicionar Acompanhante</button>
+            <button onclick="adicionarCampoNome()" style="margin: 10px 0; cursor:pointer;">+ Adicionar Nome</button>
             <button class="btn-primary" onclick="salvar()">Sincronizar Reserva ☁️</button>
         </div>
     </div>
@@ -115,7 +114,7 @@
     function formatar(d) { return d ? d.split('-').reverse().join('/') : ""; }
     function adicionarCampoNome() {
         const input = document.createElement('input');
-        input.type = 'text'; input.className = 'nome-input'; input.placeholder = 'Nome do acompanhante';
+        input.type = 'text'; input.className = 'nome-input'; input.placeholder = 'Nome completo';
         document.getElementById('containerNomes').appendChild(input);
     }
 
@@ -127,7 +126,7 @@
 
     function renderizarTudo() {
         const hoje = new Date().toISOString().split('T')[0];
-        document.getElementById('tituloHoje').innerText = "Painel: " + formatar(hoje);
+        document.getElementById('tituloHoje').innerText = "Hoje: " + formatar(hoje);
         
         const sel = document.getElementById('selectApto');
         const listaConf = document.getElementById('listaUnidadesCadastradas');
@@ -136,10 +135,9 @@
         listaConf.innerHTML = '';
         listaLimpeza.innerHTML = '';
         
-        // Renderiza Unidades e Aba Limpeza
         Object.keys(dadosAptos).forEach(a => {
             sel.innerHTML += `<option value="${a}">${a}</option>`;
-            listaConf.innerHTML += `<div class="card-box" style="display:flex; justify-content:space-between; padding:10px;">🏠 ${a} <button onclick="db.ref('aptos/${a}').remove()" style="color:red; border:none; background:none; cursor:pointer;">Excluir</button></div>`;
+            listaConf.innerHTML += `<div class="card-box" style="display:flex; justify-content:space-between; padding:10px;">🏠 ${a} <button onclick="db.ref('aptos/${a}').remove()" style="color:red; border:none; background:none; cursor:pointer;">✕</button></div>`;
             
             const st = dadosAptos[a] || 'limpo';
             listaLimpeza.innerHTML += `
@@ -147,13 +145,12 @@
                     <span class="badge badge-${st}">${st}</span>
                     <b>🏠 ${a}</b>
                     <div style="display:flex; gap:10px; margin-top:15px;">
-                        <button class="btn-limpeza btn-set-limpo" onclick="setLimpeza('${a}', 'limpo')">MARCAR COMO LIMPO</button>
-                        <button class="btn-limpeza btn-set-sujo" onclick="setLimpeza('${a}', 'sujo')">MARCAR COMO SUJO</button>
+                        <button class="btn-limpeza btn-set-limpo" onclick="setLimpeza('${a}', 'limpo')">✅ LIMPO</button>
+                        <button class="btn-limpeza btn-set-sujo" onclick="setLimpeza('${a}', 'sujo')">⚠️ SUJO</button>
                     </div>
                 </div>`;
         });
 
-        // Renderiza Painel e Histórico
         const cEnt = document.getElementById('listaEntradas');
         const cSai = document.getElementById('listaSaidas');
         const cHist = document.getElementById('listaGeral');
@@ -161,23 +158,29 @@
 
         Object.keys(dadosReservas).forEach(key => {
             const r = dadosReservas[key];
-            let st = dadosAptos[r.apto] || 'limpo';
+            const st = dadosAptos[r.apto] || 'limpo';
+            const nomesStr = Array.isArray(r.nomes) ? r.nomes.join(', ') : r.nomes;
 
-            // LÓGICA AUTOMÁTICA: Se hoje é dia de Check-out, forçar status "sujo"
+            // Lógica automática para marcar como sujo no dia da saída
             if (r.s === hoje && st !== 'sujo') {
                 setLimpeza(r.apto, 'sujo');
-                st = 'sujo';
             }
 
-            const nomesStr = Array.isArray(r.nomes) ? r.nomes.join(', ') : r.nomes;
-            const cardHtml = `
+            // Card para Entradas (Com Status de Limpeza)
+            const cardEntrada = `
                 <div class="apto-card">
                     <span class="badge badge-${st}">${st}</span>
                     <b>🏠 ${r.apto}</b><br><small>👤 ${nomesStr}</small>
                 </div>`;
 
-            if(r.e === hoje) cEnt.innerHTML += cardHtml;
-            if(r.s === hoje) cSai.innerHTML += cardHtml;
+            // Card para Saídas (Sem Status de Limpeza)
+            const cardSaida = `
+                <div class="apto-card">
+                    <b>🏠 ${r.apto}</b><br><small>👤 ${nomesStr}</small>
+                </div>`;
+
+            if(r.e === hoje) cEnt.innerHTML += cardEntrada;
+            if(r.s === hoje) cSai.innerHTML += cardSaida;
             
             cHist.innerHTML += `<div class="card-box" style="display:flex; justify-content:space-between; align-items:center;">
                 <div><b>${r.apto}</b> (${formatar(r.e)} - ${formatar(r.s)})<br><small>${nomesStr}</small></div>
@@ -191,9 +194,9 @@
         const e = document.getElementById('dataEntrada').value;
         const s = document.getElementById('dataSaida').value;
         const nomes = Array.from(document.querySelectorAll('.nome-input')).map(i => i.value).filter(v => v);
-        if(!apto || !e || !s || nomes.length == 0) return alert("Preencha tudo!");
+        if(!apto || !e || !s || nomes.length == 0) return alert("Preencha todos os campos!");
         db.ref('reservas').push({ apto, e, s, nomes }).then(() => {
-            alert("Sucesso!");
+            alert("Reserva Sincronizada!");
             document.getElementById('containerNomes').innerHTML = '<input type="text" class="nome-input" placeholder="Nome completo">';
             trocarAba(null, 'aba-painel');
         });
