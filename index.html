@@ -68,6 +68,7 @@
 
     <div id="aba-limpeza" class="content-section">
         <h2>🧹 Controle de Limpeza</h2>
+        <p style="font-size: 12px; color: #666; margin-bottom: 20px;">Nota: Apartamentos em uso ficam sujos automaticamente.</p>
         <div id="listaControleLimpeza"></div>
     </div>
 
@@ -135,6 +136,7 @@
         listaConf.innerHTML = '';
         listaLimpeza.innerHTML = '';
         
+        // Renderiza Aba Limpeza e Config
         Object.keys(dadosAptos).forEach(a => {
             sel.innerHTML += `<option value="${a}">${a}</option>`;
             listaConf.innerHTML += `<div class="card-box" style="display:flex; justify-content:space-between; padding:10px;">🏠 ${a} <button onclick="db.ref('aptos/${a}').remove()" style="color:red; border:none; background:none; cursor:pointer;">✕</button></div>`;
@@ -145,8 +147,8 @@
                     <span class="badge badge-${st}">${st}</span>
                     <b>🏠 ${a}</b>
                     <div style="display:flex; gap:10px; margin-top:15px;">
-                        <button class="btn-limpeza btn-set-limpo" onclick="setLimpeza('${a}', 'limpo')">✅ LIMPO</button>
-                        <button class="btn-limpeza btn-set-sujo" onclick="setLimpeza('${a}', 'sujo')">⚠️ SUJO</button>
+                        <button class="btn-limpeza btn-set-limpo" onclick="setLimpeza('${a}', 'limpo')">✅ LIMPAR</button>
+                        <button class="btn-limpeza btn-set-sujo" onclick="setLimpeza('${a}', 'sujo')">⚠️ SUJAR</button>
                     </div>
                 </div>`;
         });
@@ -161,23 +163,14 @@
             const st = dadosAptos[r.apto] || 'limpo';
             const nomesStr = Array.isArray(r.nomes) ? r.nomes.join(', ') : r.nomes;
 
-            // Lógica automática para marcar como sujo no dia da saída
-            if (r.s === hoje && st !== 'sujo') {
+            // NOVA LÓGICA AUTOMÁTICA: 
+            // Se hoje estiver entre a data de entrada (r.e) e saída (r.s), o apto fica sujo.
+            if (hoje >= r.e && hoje <= r.s && st !== 'sujo') {
                 setLimpeza(r.apto, 'sujo');
             }
 
-            // Card para Entradas (Com Status de Limpeza)
-            const cardEntrada = `
-                <div class="apto-card">
-                    <span class="badge badge-${st}">${st}</span>
-                    <b>🏠 ${r.apto}</b><br><small>👤 ${nomesStr}</small>
-                </div>`;
-
-            // Card para Saídas (Sem Status de Limpeza)
-            const cardSaida = `
-                <div class="apto-card">
-                    <b>🏠 ${r.apto}</b><br><small>👤 ${nomesStr}</small>
-                </div>`;
+            const cardEntrada = `<div class="apto-card"><span class="badge badge-${st}">${st}</span><b>🏠 ${r.apto}</b><br><small>👤 ${nomesStr}</small></div>`;
+            const cardSaida = `<div class="apto-card"><b>🏠 ${r.apto}</b><br><small>👤 ${nomesStr}</small></div>`;
 
             if(r.e === hoje) cEnt.innerHTML += cardEntrada;
             if(r.s === hoje) cSai.innerHTML += cardSaida;
@@ -194,7 +187,7 @@
         const e = document.getElementById('dataEntrada').value;
         const s = document.getElementById('dataSaida').value;
         const nomes = Array.from(document.querySelectorAll('.nome-input')).map(i => i.value).filter(v => v);
-        if(!apto || !e || !s || nomes.length == 0) return alert("Preencha todos os campos!");
+        if(!apto || !e || !s || nomes.length == 0) return alert("Preencha tudo!");
         db.ref('reservas').push({ apto, e, s, nomes }).then(() => {
             alert("Reserva Sincronizada!");
             document.getElementById('containerNomes').innerHTML = '<input type="text" class="nome-input" placeholder="Nome completo">';
