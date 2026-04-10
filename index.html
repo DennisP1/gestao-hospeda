@@ -28,6 +28,7 @@
         .badge-sujo { background: var(--danger); }
         input, select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 10px; box-sizing: border-box; }
         .btn-primary { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; }
+        .btn-add-nome { background: #95a5a6; color: white; border: none; padding: 8px; border-radius: 5px; cursor: pointer; margin-bottom: 10px; font-size: 12px; }
         body.mobile-mode { flex-direction: column; }
         body.mobile-mode .sidebar { width: 100%; height: 65px; flex-direction: row; position: fixed; bottom: 0; }
         body.mobile-mode .sidebar-header { display: none; }
@@ -64,23 +65,28 @@
     <div id="aba-registro" class="content-section">
         <h2>📝 Nova Reserva</h2>
         <div class="card-box">
+            <label>Unidade</label>
             <select id="selectApto"></select>
             <div style="display:flex; gap:10px;">
-                <input type="date" id="dataEntrada">
-                <input type="date" id="dataSaida">
+                <div style="flex:1"><label>Check-in</label><input type="date" id="dataEntrada"></div>
+                <div style="flex:1"><label>Check-out</label><input type="date" id="dataSaida"></div>
             </div>
-            <div id="listaNomes"><input type="text" class="nome-input" placeholder="Nome principal"></div>
-            <button class="btn-primary" onclick="salvar()">Sincronizar ☁️</button>
+            <label>Hóspedes</label>
+            <div id="containerNomes">
+                <input type="text" class="nome-input" placeholder="Nome do hóspede">
+            </div>
+            <button class="btn-add-nome" onclick="adicionarCampoNome()">+ Adicionar outro hóspede</button>
+            <button class="btn-primary" onclick="salvar()">Sincronizar na Nuvem ☁️</button>
         </div>
     </div>
 
     <div id="aba-historico" class="content-section"><h2>📂 Histórico</h2><div id="listaGeral"></div></div>
     
     <div id="aba-config" class="content-section">
-        <h2>⚙️ Unidades</h2>
+        <h2>⚙️ Gerenciar Unidades</h2>
         <div class="card-box">
-            <input type="text" id="novoAptoNome" placeholder="Ex: 101">
-            <button class="btn-primary" onclick="addUnidade()">Adicionar</button>
+            <input type="text" id="novoAptoNome" placeholder="Ex: Apto 101">
+            <button class="btn-primary" onclick="addUnidade()">Adicionar Unidade</button>
         </div>
         <div id="listaUnidadesCadastradas"></div>
     </div>
@@ -101,16 +107,26 @@
 
     function formatar(d) { return d ? d.split('-').reverse().join('/') : ""; }
 
+    function adicionarCampoNome() {
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'nome-input';
+        input.placeholder = 'Nome do hóspede';
+        document.getElementById('containerNomes').appendChild(input);
+    }
+
     db.ref('aptos').on('value', snap => {
         const aptos = snap.val() || {};
         const sel = document.getElementById('selectApto');
         const lista = document.getElementById('listaUnidadesCadastradas');
-        sel.innerHTML = '<option value="">-- Selecione --</option>';
-        lista.innerHTML = '';
-        Object.keys(aptos).forEach(a => {
-            sel.innerHTML += `<option value="${a}">${a}</option>`;
-            lista.innerHTML += `<div class="card-box" style="display:flex; justify-content:space-between; padding:10px; margin-bottom:5px;">🏠 ${a} <button onclick="db.ref('aptos/${a}').remove()" style="color:red; background:none; border:none; cursor:pointer;">X</button></div>`;
-        });
+        if(sel) {
+            sel.innerHTML = '<option value="">-- Selecione --</option>';
+            lista.innerHTML = '';
+            Object.keys(aptos).forEach(a => {
+                sel.innerHTML += `<option value="${a}">${a}</option>`;
+                lista.innerHTML += `<div class="card-box" style="display:flex; justify-content:space-between; padding:10px; margin-bottom:5px;">🏠 ${a} <button onclick="db.ref('aptos/${a}').remove()" style="color:red; background:none; border:none; cursor:pointer;">Remover</button></div>`;
+            });
+        }
     });
 
     db.ref('reservas').on('value', snap => {
@@ -127,10 +143,11 @@
             Object.keys(reservas).forEach(key => {
                 const r = reservas[key];
                 const st = statusAptos[r.apto] || 'limpo';
-                const card = `<div class="apto-card"><span class="badge badge-${st}">${st}</span><b>${r.apto}</b><br><small>${r.nomes.join(', ')}</small><br><button onclick="setLimpeza('${r.apto}','limpo')">Limpo</button><button onclick="setLimpeza('${r.apto}','sujo')">Sujo</button></div>`;
+                const nomesHospedes = Array.isArray(r.nomes) ? r.nomes.join(', ') : r.nomes;
+                const card = `<div class="apto-card"><span class="badge badge-${st}">${st}</span><b>🏠 ${r.apto}</b><br><small>👤 ${nomesHospedes}</small><br><div style="margin-top:8px;"><button onclick="setLimpeza('${r.apto}','limpo')">Limpo</button> <button onclick="setLimpeza('${r.apto}','sujo')">Sujo</button></div></div>`;
                 if(r.e === hoje) cEnt.innerHTML += card;
                 if(r.s === hoje) cSai.innerHTML += card;
-                cHist.innerHTML += `<div class="card-box" style="display:flex; justify-content:space-between;"><div><b>${r.apto}</b> (${formatar(r.e)}-${formatar(r.s)})</div><button onclick="db.ref('reservas/${key}').remove()" style="color:red; background:none; border:none;">X</button></div>`;
+                cHist.innerHTML += `<div class="card-box" style="display:flex; justify-content:space-between;"><div><b>${r.apto}</b> (${formatar(r.e)} - ${formatar(r.s)})<br><small>${nomesHospedes}</small></div><button onclick="db.ref('reservas/${key}').remove()" style="color:red; background:none; border:none; cursor:pointer;">✕</button></div>`;
             });
         });
     });
@@ -140,8 +157,12 @@
         const e = document.getElementById('dataEntrada').value;
         const s = document.getElementById('dataSaida').value;
         const nomes = Array.from(document.querySelectorAll('.nome-input')).map(i => i.value).filter(v => v);
-        if(!apto || !e || !s || nomes.length == 0) return alert("Preencha tudo!");
-        db.ref('reservas').push({ apto, e, s, nomes }).then(() => { alert("Salvo na Nuvem!"); trocarAba(null, 'aba-painel'); });
+        if(!apto || !e || !s || nomes.length == 0) return alert("Preencha todos os campos!");
+        db.ref('reservas').push({ apto, e, s, nomes }).then(() => {
+            alert("Salvo e Sincronizado!");
+            document.getElementById('containerNomes').innerHTML = '<input type="text" class="nome-input" placeholder="Nome do hóspede">';
+            trocarAba(null, 'aba-painel');
+        });
     }
 
     function addUnidade() {
