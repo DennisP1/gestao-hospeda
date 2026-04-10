@@ -21,9 +21,10 @@
             font-family: 'Segoe UI', system-ui, sans-serif; 
             background-color: var(--bg-body); 
             margin: 0; display: flex; height: 100vh; color: var(--text-main);
+            transition: all 0.3s ease;
         }
 
-        /* --- MENU LATERAL (SIDEBAR) --- */
+        /* --- MENU LATERAL (PADRÃO COMPUTADOR) --- */
         .sidebar { 
             width: var(--sidebar-width); 
             background: #1a252f; 
@@ -31,6 +32,8 @@
             display: flex; 
             flex-direction: column;
             flex-shrink: 0;
+            z-index: 100;
+            transition: all 0.3s ease;
         }
         .sidebar-header { padding: 30px 20px; font-weight: 800; font-size: 1.2rem; border-bottom: 1px solid #2c3e50; letter-spacing: 1px; }
         
@@ -44,103 +47,134 @@
         .nav-btn:hover { background: #2c3e50; color: white; }
         .nav-btn.active { background: var(--primary); color: white; }
 
-        /* --- ÁREA DE CONTEÚDO --- */
-        .main-content { flex: 1; overflow-y: auto; padding: 40px; }
+        /* --- MODO CELULAR (CSS SOBREPOSTO) --- */
+        body.mobile-mode { flex-direction: column; }
+        body.mobile-mode .sidebar {
+            width: 100%;
+            height: 70px;
+            flex-direction: row;
+            position: fixed;
+            bottom: 0;
+            top: auto;
+            border-top: 1px solid #2c3e50;
+        }
+        body.mobile-mode .sidebar-header { display: none; }
+        body.mobile-mode .sidebar-nav { display: flex; padding: 0; width: 100%; justify-content: space-around; }
+        body.mobile-mode .nav-btn {
+            flex-direction: column;
+            padding: 10px;
+            text-align: center;
+            justify-content: center;
+            font-size: 10px;
+            gap: 4px;
+        }
+        body.mobile-mode .main-content { padding: 15px; padding-bottom: 90px; }
+        body.mobile-mode .painel-grid { grid-template-columns: 1fr; }
+        body.mobile-mode .footer-sidebar { display: none; }
 
+        /* --- ÁREA DE CONTEÚDO --- */
+        .main-content { flex: 1; overflow-y: auto; padding: 40px; transition: 0.3s; }
         .content-section { display: none; max-width: 1000px; margin: auto; animation: fadeIn 0.3s ease; }
         .content-section.active { display: block; }
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* --- CARDS E GRIDS --- */
-        .card-box { background: white; padding: 25px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
-        .painel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
+        /* --- CARDS E COMPONENTES --- */
+        .card-box { background: white; padding: 20px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 25px; }
+        .painel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .col-header { padding: 12px; border-radius: 8px; text-align: center; font-weight: bold; margin-bottom: 15px; font-size: 13px; }
+        .bg-ent { background: rgba(46, 204, 113, 0.1); color: var(--success); }
+        .bg-sai { background: rgba(231, 76, 60, 0.1); color: var(--danger); }
+
+        .apto-card { border: 1px solid var(--border); border-radius: 12px; margin-bottom: 12px; background: white; }
+        .apto-card-head { padding: 12px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 14px; }
         
-        .col-header { padding: 12px; border-radius: 8px; text-align: center; font-weight: bold; margin-bottom: 20px; font-size: 14px; text-transform: uppercase; }
-        .bg-ent { background: rgba(46, 204, 113, 0.1); color: var(--success); border: 1px solid rgba(46, 204, 113, 0.2); }
-        .bg-sai { background: rgba(231, 76, 60, 0.1); color: var(--danger); border: 1px solid rgba(231, 76, 60, 0.2); }
-
-        .apto-card { border: 1px solid var(--border); border-radius: 12px; margin-bottom: 15px; background: white; transition: 0.2s; }
-        .apto-card:hover { transform: translateY(-2px); box-shadow: 0 8px 15px rgba(0,0,0,0.05); }
-        .apto-card-head { padding: 15px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
-        .apto-card-body { padding: 15px; }
-
-        /* --- COMPONENTES --- */
-        .badge { padding: 4px 10px; border-radius: 20px; font-size: 10px; color: white; font-weight: bold; text-transform: uppercase; }
+        .badge { padding: 3px 8px; border-radius: 20px; font-size: 9px; color: white; font-weight: bold; }
         .badge-limpo { background: var(--success); }
         .badge-sujo { background: var(--danger); }
         
-        .pill { background: #fef9c3; padding: 6px 12px; border-radius: 6px; font-size: 12px; display: block; margin-bottom: 10px; border-left: 4px solid #f1c40f; color: #856404; }
-        .hospede-tag { background: #ebf5fb; color: #2980b9; padding: 4px 12px; border-radius: 20px; font-size: 12px; margin: 2px; display: inline-block; border: 1px solid #d6eaf8; }
-
-        .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px; }
-        label { font-size: 11px; font-weight: bold; color: var(--text-sub); text-transform: uppercase; margin-bottom: 6px; display: block; }
-        input, select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); font-size: 14px; }
+        .pill { background: #fef9c3; padding: 6px; border-radius: 6px; font-size: 11px; display: block; margin-bottom: 10px; border-left: 4px solid #f1c40f; }
+        .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
         
-        .btn-primary { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; transition: 0.2s; }
-        .btn-primary:hover { background: #2980b9; }
-
-        .vazio { text-align: center; color: var(--text-sub); padding: 30px; border: 1px dashed var(--border); border-radius: 12px; }
+        .btn-primary { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; }
+        
+        /* Botão de Alternar Modo */
+        .btn-toggle-view {
+            background: #2c3e50;
+            color: #fff;
+            border: 1px solid #455a64;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            cursor: pointer;
+            margin: 10px 20px;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+        .btn-toggle-view:hover { background: var(--primary); }
     </style>
 </head>
-<body>
+<body id="mainBody">
 
 <aside class="sidebar">
     <div class="sidebar-header">🏢 HOSPEDA+</div>
     <nav class="sidebar-nav">
-        <button class="nav-btn active" onclick="trocarAba(event, 'aba-painel')">📅 Painel Diário</button>
-        <button class="nav-btn" onclick="trocarAba(event, 'aba-registro')">➕ Nova Reserva</button>
-        <button class="nav-btn" onclick="trocarAba(event, 'aba-historico')">📂 Histórico</button>
-        <button class="nav-btn" onclick="trocarAba(event, 'aba-config')">⚙️ Unidades</button>
+        <button class="nav-btn active" onclick="trocarAba(event, 'aba-painel')"><span>📅</span> Painel</button>
+        <button class="nav-btn" onclick="trocarAba(event, 'aba-registro')"><span>➕</span> Reserva</button>
+        <button class="nav-btn" onclick="trocarAba(event, 'aba-historico')"><span>📂</span> Histórico</button>
+        <button class="nav-btn" onclick="trocarAba(event, 'aba-config')"><span>⚙️</span> Unidades</button>
     </nav>
-    <div style="padding: 20px; font-size: 10px; color: #566573; text-align: center;">V 2.0 - 2026</div>
+    
+    <div class="footer-sidebar">
+        <button class="btn-toggle-view" onclick="toggleView()">📱 Mudar para Celular</button>
+        <div style="padding: 10px 20px; font-size: 10px; color: #566573;">V 2.0 - 2026</div>
+    </div>
 </aside>
 
 <main class="main-content">
 
     <div id="aba-painel" class="content-section active">
-        <h2 id="tituloHoje">Carregando...</h2>
+        <h2 id="tituloHoje" style="margin-bottom: 5px;">Carregando...</h2>
         <div class="painel-grid">
             <div>
-                <div class="col-header bg-ent">📥 Entradas (Check-in)</div>
+                <div class="col-header bg-ent">📥 Check-in</div>
                 <div id="listaEntradas"></div>
             </div>
             <div>
-                <div class="col-header bg-sai">📤 Saídas (Check-out)</div>
+                <div class="col-header bg-sai">📤 Check-out</div>
                 <div id="listaSaidas"></div>
             </div>
         </div>
     </div>
 
     <div id="aba-registro" class="content-section">
-        <h2>Adicionar Reserva</h2>
+        <h2>Nova Reserva</h2>
         <div class="card-box">
             <div class="form-row">
-                <div><label>Apartamento</label><select id="selectApto"></select></div>
+                <div><label>Unidade</label><select id="selectApto"></select></div>
                 <div><label>Entrada</label><input type="date" id="dataEntrada"></div>
                 <div><label>Saída</label><input type="date" id="dataSaida"></div>
             </div>
-            <label>Nome dos Hóspedes</label>
-            <div id="listaNomes">
+            <div id="listaNomes" style="margin-top:15px;">
                 <input type="text" class="nome-input" placeholder="Hóspede Principal" style="margin-bottom:10px; width:100%; padding:12px; border-radius:8px; border:1px solid #ddd; box-sizing:border-box;">
             </div>
-            <button onclick="addNome()" style="background:none; border:1px dashed #aaa; padding:10px; width:100%; cursor:pointer; margin-bottom:20px; border-radius:8px;">+ Adicionar Pessoa</button>
-            <button class="btn-primary" onclick="salvar()">Confirmar Estadia</button>
+            <button onclick="addNome()" style="background:none; border:1px dashed #aaa; padding:10px; width:100%; cursor:pointer; border-radius:8px; margin-bottom:15px;">+ Acompanhante</button>
+            <button class="btn-primary" onclick="salvar()">Salvar</button>
         </div>
     </div>
 
     <div id="aba-historico" class="content-section">
-        <h2>Histórico de Registros</h2>
+        <h2>Histórico</h2>
         <div id="listaGeral"></div>
     </div>
 
     <div id="aba-config" class="content-section">
-        <h2>Gerenciar Unidades</h2>
+        <h2>Configurações</h2>
         <div class="card-box">
-            <label>Cadastrar Nova Unidade</label>
+            <label>Adicionar Unidade</label>
             <div style="display:flex; gap:10px;">
-                <input type="text" id="novoAptoNome" placeholder="Ex: Apto 101">
-                <button onclick="addUnidade()" style="padding:10px 20px; background:var(--primary); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">Adicionar</button>
+                <input type="text" id="novoAptoNome" placeholder="Ex: 101">
+                <button onclick="addUnidade()" style="padding:10px; background:var(--primary); color:white; border:none; border-radius:8px; cursor:pointer;">Add</button>
             </div>
         </div>
         <div id="listaUnidadesCadastradas"></div>
@@ -149,14 +183,25 @@
 </main>
 
 <script>
-    // Função principal de navegação
+    // --- FUNÇÃO PARA MUDAR O VISUAL ---
+    function toggleView() {
+        const body = document.getElementById('mainBody');
+        const btn = document.querySelector('.btn-toggle-view');
+        
+        if(body.classList.contains('mobile-mode')) {
+            body.classList.remove('mobile-mode');
+            btn.innerText = "📱 Mudar para Celular";
+        } else {
+            body.classList.add('mobile-mode');
+            btn.innerText = "💻 Mudar para PC";
+        }
+    }
+
     function trocarAba(event, idSecao) {
         document.querySelectorAll(".content-section").forEach(s => s.classList.remove("active"));
         document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
-        
         document.getElementById(idSecao).classList.add("active");
         event.currentTarget.classList.add("active");
-
         if(idSecao === 'aba-painel') attPainel();
         if(idSecao === 'aba-historico') attHist();
         carregarDados();
@@ -168,7 +213,7 @@
         const aptos = JSON.parse(localStorage.getItem('db_aptos') || '{}');
         const sel = document.getElementById('selectApto');
         if(sel) {
-            sel.innerHTML = '<option value="">-- Escolha --</option>';
+            sel.innerHTML = '<option value="">-- Unidade --</option>';
             Object.keys(aptos).forEach(a => sel.innerHTML += `<option value="${a}">${a}</option>`);
         }
         const listaConf = document.getElementById('listaUnidadesCadastradas');
@@ -176,9 +221,9 @@
             listaConf.innerHTML = '';
             Object.keys(aptos).forEach(a => {
                 listaConf.innerHTML += `
-                <div class="card-box" style="padding:15px; display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                    <span><strong>🏠 ${a}</strong> (Status: ${aptos[a]})</span>
-                    <button onclick="delApto('${a}')" style="color:var(--danger); border:none; background:none; cursor:pointer; font-weight:bold;">Remover</button>
+                <div class="card-box" style="padding:10px; display:flex; justify-content:space-between; margin-bottom:5px;">
+                    <span>🏠 ${a}</span>
+                    <button onclick="delApto('${a}')" style="color:red; border:none; background:none; cursor:pointer;">Excluir</button>
                 </div>`;
             });
         }
@@ -195,7 +240,7 @@
     }
 
     function delApto(n) {
-        if(confirm("Deseja excluir esta unidade?")) {
+        if(confirm("Excluir unidade?")) {
             let a = JSON.parse(localStorage.getItem('db_aptos'));
             delete a[n];
             localStorage.setItem('db_aptos', JSON.stringify(a));
@@ -205,7 +250,7 @@
 
     function addNome() {
         const i = document.createElement('input');
-        i.className = 'nome-input'; i.placeholder = 'Acompanhante';
+        i.className = 'nome-input'; i.placeholder = 'Nome';
         i.style = "margin-bottom:10px; width:100%; padding:12px; border-radius:8px; border:1px solid #ddd; box-sizing:border-box;";
         document.getElementById('listaNomes').appendChild(i);
     }
@@ -215,49 +260,40 @@
         const e = document.getElementById('dataEntrada').value;
         const s = document.getElementById('dataSaida').value;
         const nomes = Array.from(document.querySelectorAll('.nome-input')).map(i => i.value).filter(v => v);
-        if(!apto || !e || !s || nomes.length == 0) return alert("Preencha todos os campos.");
-        
+        if(!apto || !e || !s || nomes.length == 0) return alert("Preencha tudo!");
         let res = JSON.parse(localStorage.getItem('db_res') || '[]');
         res.push({id: Date.now(), apto, e, s, nomes});
         localStorage.setItem('db_res', JSON.stringify(res));
-        alert("Reserva salva com sucesso!");
-        attPainel();
-        document.querySelectorAll(".nav-btn")[0].click(); // Volta pro painel
+        alert("Salvo!");
+        location.reload();
     }
 
     function attPainel() {
         const hoje = new Date().toISOString().split('T')[0];
-        document.getElementById('tituloHoje').innerText = "Hoje, " + formatar(hoje);
+        document.getElementById('tituloHoje').innerText = formatar(hoje);
         const res = JSON.parse(localStorage.getItem('db_res') || '[]');
         const status = JSON.parse(localStorage.getItem('db_aptos') || '{}');
         const cEnt = document.getElementById('listaEntradas');
         const cSai = document.getElementById('listaSaidas');
-        
         cEnt.innerHTML = ''; cSai.innerHTML = '';
 
-        const entradas = res.filter(r => r.e === hoje);
-        const saidas = res.filter(r => r.s === hoje);
-
-        if(entradas.length === 0) cEnt.innerHTML = '<div class="vazio">Nenhuma entrada para hoje</div>';
-        entradas.forEach(r => cEnt.innerHTML += criarCard(r, status[r.apto]));
-
-        if(saidas.length === 0) cSai.innerHTML = '<div class="vazio">Nenhuma saída para hoje</div>';
-        saidas.forEach(r => cSai.innerHTML += criarCard(r, status[r.apto]));
+        res.filter(r => r.e === hoje).forEach(r => cEnt.innerHTML += criarCard(r, status[r.apto]));
+        res.filter(r => r.s === hoje).forEach(r => cSai.innerHTML += criarCard(r, status[r.apto]));
     }
 
     function criarCard(r, st) {
         return `
             <div class="apto-card">
                 <div class="apto-card-head">
-                    <span>🏠 ${r.apto}</span>
+                    <span>${r.apto}</span>
                     <span class="badge badge-${st}">${st}</span>
                 </div>
-                <div class="apto-body">
-                    <span class="pill">📅 Período: ${formatar(r.e)} até ${formatar(r.s)}</span>
-                    ${r.nomes.map(n => `<span class="hospede-tag">👤 ${n}</span>`).join('')}
-                    <div style="margin-top:15px; border-top:1px solid #eee; padding-top:10px; display:flex; gap:10px;">
-                        <button onclick="setLimpeza('${r.apto}', 'limpo')" style="cursor:pointer; font-size:11px; padding:5px 10px; border-radius:4px; border:1px solid #2ecc71; background:white; color:#2ecc71;">Marcar Limpo</button>
-                        <button onclick="setLimpeza('${r.apto}', 'sujo')" style="cursor:pointer; font-size:11px; padding:5px 10px; border-radius:4px; border:1px solid #e74c3c; background:white; color:#e74c3c;">Marcar Sujo</button>
+                <div class="apto-card-body">
+                    <span class="pill">📅 ${formatar(r.e)} - ${formatar(r.s)}</span>
+                    <div style="font-size:12px; margin-bottom:10px;">👤 ${r.nomes.join(', ')}</div>
+                    <div style="display:flex; gap:5px;">
+                        <button onclick="setLimpeza('${r.apto}', 'limpo')" style="font-size:10px; cursor:pointer;">Limpo</button>
+                        <button onclick="setLimpeza('${r.apto}', 'sujo')" style="font-size:10px; cursor:pointer;">Sujo</button>
                     </div>
                 </div>
             </div>`;
@@ -274,21 +310,17 @@
         const res = JSON.parse(localStorage.getItem('db_res') || '[]');
         const c = document.getElementById('listaGeral');
         c.innerHTML = '';
-        if(res.length === 0) c.innerHTML = '<div class="vazio">Histórico vazio.</div>';
         res.sort((a,b) => b.id - a.id).forEach(r => {
             c.innerHTML += `
-            <div class="card-box" style="display:flex; justify-content:space-between; align-items:center;">
-                <div>
-                    <strong>${r.apto}</strong><br>
-                    <small>${formatar(r.e)} a ${formatar(r.s)}</small> - <span style="color:#7f8c8d">${r.nomes.join(', ')}</span>
-                </div>
+            <div class="card-box" style="padding:15px; display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <div><strong>${r.apto}</strong><br><small>${formatar(r.e)} a ${formatar(r.s)}</small></div>
                 <button onclick="delRes(${r.id})" style="color:red; border:none; background:none; cursor:pointer;">✕</button>
             </div>`;
         });
     }
 
     function delRes(id) {
-        if(confirm("Excluir registro permanentemente?")) {
+        if(confirm("Excluir?")) {
             let r = JSON.parse(localStorage.getItem('db_res'));
             r = r.filter(x => x.id !== id);
             localStorage.setItem('db_res', JSON.stringify(r));
@@ -296,7 +328,6 @@
         }
     }
 
-    // Inicialização
     carregarDados();
     attPainel();
 </script>
