@@ -43,12 +43,15 @@
         .hospede-row input:first-child { flex: 2; } 
         .hospede-row input:last-child { flex: 1; }
 
-        body.mobile-mode .sidebar { width: 100%; height: 65px; flex-direction: row; position: fixed; bottom: 0; z-index: 100; }
-        body.mobile-mode .sidebar-header, body.mobile-mode .footer-sidebar { display: none; }
+        /* ESTILO CELULAR REATIVADO */
+        body.mobile-mode { flex-direction: column; }
+        body.mobile-mode .sidebar { width: 100%; height: 65px; flex-direction: row; position: fixed; bottom: 0; z-index: 100; left:0; right:0; }
+        body.mobile-mode .sidebar-header, body.mobile-mode .footer-sidebar-text { display: none; }
         body.mobile-mode .sidebar-nav { display: flex; width: 100%; justify-content: space-around; padding: 0; }
         body.mobile-mode .nav-btn { flex-direction: column; font-size: 8px; padding: 10px 5px; text-align: center; justify-content: center; gap: 2px; }
         body.mobile-mode .main-content { padding: 15px; padding-bottom: 90px; }
         body.mobile-mode .painel-grid { grid-template-columns: 1fr; }
+        body.mobile-mode .footer-sidebar { flex-direction: row; padding: 5px; width: auto; position: absolute; top: -40px; right: 10px; }
     </style>
 </head>
 <body id="mainBody">
@@ -71,8 +74,9 @@
         <button class="nav-btn" onclick="trocarAba(event, 'aba-historico')">📂 Histórico</button>
         <button id="nav-config" class="nav-btn" onclick="trocarAba(event, 'aba-config')">⚙️ Unidades</button>
     </nav>
-    <div class="footer-sidebar" style="padding: 15px;">
-        <button onclick="logout()" style="width:100%; padding:8px; margin-bottom:5px; cursor:pointer; background:none; color:white; border:1px solid #444; border-radius:5px;">Sair</button>
+    <div class="footer-sidebar" style="padding: 10px; border-top: 1px solid #2c3e50;">
+        <button onclick="toggleView()" style="width:100%; padding:8px; margin-bottom:5px; font-size:10px; cursor:pointer; background:#444; color:white; border:none; border-radius:5px;">📱 Modo Celular</button>
+        <button onclick="logout()" style="width:100%; padding:8px; cursor:pointer; background:none; color:#e74c3c; border:1px solid #e74c3c; border-radius:5px; font-size:10px;">Sair</button>
     </div>
 </aside>
 
@@ -130,7 +134,7 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    let userRole = null; // 'Jenny', 'Imperador' ou 'ADM'
+    let userRole = null; 
     let dadosReservas = {};
     let dadosAptos = {};
 
@@ -146,7 +150,6 @@
         document.getElementById('mainContent').style.display = 'block';
         document.getElementById('nomePredioLogado').innerText = role === 'ADM' ? 'ADMINISTRADOR' : role;
         
-        // Esconder abas se não for ADM
         if(role !== 'ADM') {
             document.getElementById('nav-reserva').style.display = 'none';
             document.getElementById('nav-config').style.display = 'none';
@@ -159,9 +162,12 @@
         renderizarTudo();
     }
 
+    function toggleView() { document.getElementById('mainBody').classList.toggle('mobile-mode'); }
+
     function carregarAptosRegistro() {
         const predio = document.getElementById('regPredio').value;
         const sel = document.getElementById('selectApto');
+        if(!sel) return;
         sel.innerHTML = '<option value="">-- Selecione --</option>';
         Object.keys(dadosAptos).forEach(key => {
             if(dadosAptos[key].predio === predio) sel.innerHTML += `<option value="${key}">${key}</option>`;
