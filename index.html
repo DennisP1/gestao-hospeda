@@ -22,8 +22,11 @@
         .col-header { padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; margin-bottom: 15px; font-size: 13px; }
         .bg-ent { background: rgba(46, 204, 113, 0.1); color: var(--success); }
         .bg-sai { background: rgba(231, 76, 60, 0.1); color: var(--danger); }
-        .apto-card { border: 1px solid var(--border); border-radius: 10px; margin-bottom: 10px; background: white; padding: 15px; position: relative; }
+        .apto-card { border: 1px solid var(--border); border-radius: 10px; margin-bottom: 10px; background: white; padding: 15px; }
         .date-badge { font-size: 10px; color: #7f8c8d; background: #f8f9fa; padding: 2px 6px; border-radius: 4px; border: 1px solid #eee; margin-top: 5px; display: inline-block; }
+        .predio-tag { font-size: 10px; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; font-weight: bold; margin-right: 5px; }
+        .tag-jenny { background: #e1f5fe; color: #0288d1; }
+        .tag-imperador { background: #f3e5f5; color: #7b1fa2; }
         input, select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 10px; box-sizing: border-box; }
         .btn-primary { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; }
         .hospede-row { display: flex; gap: 10px; margin-bottom: 5px; }
@@ -88,7 +91,13 @@
     <div id="aba-config" class="content-section">
         <h2>⚙️ Gerenciar Unidades</h2>
         <div class="card-box">
-            <input type="text" id="novoAptoNome" placeholder="Ex: Apartamento 101">
+            <label>Prédio</label>
+            <select id="novoAptoPredio">
+                <option value="Jenny">Jenny</option>
+                <option value="Imperador">Imperador</option>
+            </select>
+            <label>Número/Nome da Unidade</label>
+            <input type="text" id="novoAptoNome" placeholder="Ex: 408">
             <button class="btn-primary" onclick="addUnidade()">Adicionar Unidade</button>
         </div>
         <div id="listaUnidadesCadastradas"></div>
@@ -132,9 +141,14 @@
         sel.innerHTML = '<option value="">-- Selecione --</option>';
         listaConf.innerHTML = '';
         
-        Object.keys(dadosAptos).forEach(a => {
-            sel.innerHTML += `<option value="${a}">${a}</option>`;
-            listaConf.innerHTML += `<div class="card-box" style="display:flex; justify-content:space-between; padding:10px;">🏠 ${a} <button onclick="db.ref('aptos/${a}').remove()" style="color:red; border:none; background:none; cursor:pointer;">✕</button></div>`;
+        Object.keys(dadosAptos).forEach(key => {
+            const predio = dadosAptos[key].predio || "Jenny";
+            const nomeExibicao = `${predio} - ${key}`;
+            sel.innerHTML += `<option value="${key}">${nomeExibicao}</option>`;
+            listaConf.innerHTML += `<div class="card-box" style="display:flex; justify-content:space-between; padding:10px;">
+                <span><b class="predio-tag tag-${predio.toLowerCase()}">${predio}</b> ${key}</span>
+                <button onclick="db.ref('aptos/${key}').remove()" style="color:red; border:none; background:none; cursor:pointer;">✕</button>
+            </div>`;
         });
 
         const cEnt = document.getElementById('listaEntradas');
@@ -144,6 +158,9 @@
 
         Object.keys(dadosReservas).forEach(key => {
             const r = dadosReservas[key];
+            const infoApto = dadosAptos[r.apto] || { predio: "Jenny" };
+            const predio = infoApto.predio;
+
             let hospedesHTML = '';
             if (r.hospedes && Array.isArray(r.hospedes)) {
                 hospedesHTML = r.hospedes.map(h => `👤 ${h.nome} <br> <small style="color:#7f8c8d; margin-left:18px;">CPF: ${h.cpf || 'N/A'}</small>`).join('<br>');
@@ -151,10 +168,9 @@
                 hospedesHTML = `👤 ${r.nomes || 'Hóspede'}`;
             }
 
-            // NOVA EXIBIÇÃO: Apartamento + Período + Hóspedes
             const cardHtml = `
                 <div class="apto-card">
-                    <b>🏠 ${r.apto}</b>
+                    <b class="predio-tag tag-${predio.toLowerCase()}">${predio}</b><b>🏠 ${r.apto}</b>
                     <div class="date-badge">📅 ${formatar(r.e)} até ${formatar(r.s)}</div>
                     <div style="margin-top:8px;">${hospedesHTML}</div>
                 </div>`;
@@ -163,7 +179,7 @@
             if(r.s === hoje) cSai.innerHTML += cardHtml;
             
             cHist.innerHTML += `<div class="card-box" style="display:flex; justify-content:space-between; align-items:center;">
-                <div><b>${r.apto}</b> (${formatar(r.e)} - ${formatar(r.s)})<br>${hospedesHTML}</div>
+                <div><b class="predio-tag tag-${predio.toLowerCase()}">${predio}</b><b>${r.apto}</b> (${formatar(r.e)} - ${formatar(r.s)})<br>${hospedesHTML}</div>
                 <button onclick="db.ref('reservas/${key}').remove()" style="color:red; border:none; background:none; cursor:pointer;">✕</button>
             </div>`;
         });
@@ -203,7 +219,12 @@
 
     function addUnidade() {
         const n = document.getElementById('novoAptoNome').value;
-        if(n) db.ref('aptos/' + n).set(true).then(() => document.getElementById('novoAptoNome').value = '');
+        const p = document.getElementById('novoAptoPredio').value;
+        if(n) {
+            db.ref('aptos/' + n).set({ predio: p }).then(() => {
+                document.getElementById('novoAptoNome').value = '';
+            });
+        }
     }
 
     function trocarAba(event, id) {
